@@ -5,10 +5,7 @@ build-backend = "poetry.masonry.api"
 [tool.poetry]
 name = "cloud-mover"
 version = "1.0.0"
-description = ""
+description = "Cloud Mover"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"

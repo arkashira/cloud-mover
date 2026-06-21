@@ -1,62 +1,51 @@
-import argparse
 import json
 from dataclasses import dataclass
-from enum import Enum
-from typing import Dict, List
-
-class MigrationStatus(Enum):
-    QUEUED = "queued"
-    RUNNING = "running"
-    SUCCESS = "success"
-    FAILURE = "failure"
+from argparse import ArgumentParser
 
 @dataclass
-class MigrationJob:
-    id: str
-    source_provider: str
-    target_provider: str
-    status: MigrationStatus
+class HostingProvider:
+    name: str
+    url: str
 
 class CloudMover:
-    def __init__(self):
-        self.jobs = {}
-        self.providers = ["aws", "gcp", "azure"]
+    def __init__(self, primary_provider, secondary_provider):
+        self.primary_provider = primary_provider
+        self.secondary_provider = secondary_provider
+        self.application_deployed = False
 
-    def get_providers(self) -> List[str]:
-        return self.providers
-
-    def migrate(self, source_provider: str, target_provider: str) -> str:
-        job_id = str(len(self.jobs) + 1)
-        self.jobs[job_id] = MigrationJob(job_id, source_provider, target_provider, MigrationStatus.QUEUED)
-        # Simulate migration process
-        self.jobs[job_id].status = MigrationStatus.RUNNING
-        # Simulate success or failure
-        if source_provider == target_provider:
-            self.jobs[job_id].status = MigrationStatus.FAILURE
+    def deploy_to_primary(self):
+        if not self.application_deployed:
+            print(f"Deploying application to {self.primary_provider.name}")
+            self.application_deployed = True
         else:
-            self.jobs[job_id].status = MigrationStatus.SUCCESS
-        return job_id
+            print(f"Application already deployed to {self.primary_provider.name}")
 
-    def get_job_status(self, job_id: str) -> MigrationStatus:
-        return self.jobs.get(job_id, MigrationJob(job_id, "", "", MigrationStatus.FAILURE)).status
-
-    def get_logs(self, job_id: str) -> str:
-        # Simulate log generation
-        if self.jobs.get(job_id, MigrationJob(job_id, "", "", MigrationStatus.FAILURE)).status == MigrationStatus.SUCCESS:
-            return "Migration successful"
+    def deploy_to_secondary(self):
+        if self.application_deployed:
+            print(f"Deploying application to {self.secondary_provider.name}")
+            self.application_deployed = True
         else:
-            return "Migration failed"
+            print(f"Application not deployed to primary provider, cannot deploy to secondary")
+
+    def fallback_to_secondary(self):
+        if self.application_deployed:
+            print(f"Falling back to {self.secondary_provider.name}")
+            self.application_deployed = True
+        else:
+            print(f"Application not deployed to primary provider, cannot fallback to secondary")
 
 def main():
-    parser = argparse.ArgumentParser(description="Cloud Mover")
-    parser.add_argument("--source", help="Source provider")
-    parser.add_argument("--target", help="Target provider")
+    parser = ArgumentParser(description="Cloud Mover")
+    parser.add_argument("--primary-provider", type=str, help="Primary hosting provider URL")
+    parser.add_argument("--secondary-provider", type=str, help="Secondary hosting provider URL")
     args = parser.parse_args()
-    cloud_mover = CloudMover()
-    job_id = cloud_mover.migrate(args.source, args.target)
-    print(f"Job ID: {job_id}")
-    print(f"Job Status: {cloud_mover.get_job_status(job_id)}")
-    print(f"Logs: {cloud_mover.get_logs(job_id)}")
+
+    primary_provider = HostingProvider("Primary", args.primary_provider)
+    secondary_provider = HostingProvider("Secondary", args.secondary_provider)
+
+    cloud_mover = CloudMover(primary_provider, secondary_provider)
+    cloud_mover.deploy_to_primary()
+    cloud_mover.fallback_to_secondary()
 
 if __name__ == "__main__":
     main()
