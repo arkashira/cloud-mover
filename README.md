@@ -1,12 +1,5 @@
 # Cloud Mover
-
-A Python project for managing cloud providers and initiating failovers.
+Cloud Mover is a tool for migrating applications between cloud providers.
 
 ## Usage
-
-1. Create a `CloudMover` instance.
-2. Add providers using `add_provider`.
-3. Initiate a failover using `initiate_failover`.
-4. Prioritize the failover using `prioritize_failover`.
-5. Log the failover using `log_failover`.
-6. Get the failover log using `get_failover_log`.
+To use Cloud Mover, simply run the `cloud_mover.py` script with the `--source` and `--target` arguments.

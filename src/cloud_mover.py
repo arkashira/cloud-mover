@@ -1,43 +1,62 @@
+import argparse
 import json
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Dict
+from enum import Enum
+from typing import Dict, List
+
+class MigrationStatus(Enum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILURE = "failure"
 
 @dataclass
-class Provider:
-    name: str
-    credentials: Dict[str, str]
+class MigrationJob:
+    id: str
+    source_provider: str
+    target_provider: str
+    status: MigrationStatus
 
 class CloudMover:
     def __init__(self):
-        self.providers = {}
-        self.failover_log = []
+        self.jobs = {}
+        self.providers = ["aws", "gcp", "azure"]
 
-    def add_provider(self, name: str, credentials: Dict[str, str]):
-        self.providers[name] = Provider(name, credentials)
+    def get_providers(self) -> List[str]:
+        return self.providers
 
-    def get_provider(self, name: str):
-        return self.providers.get(name)
+    def migrate(self, source_provider: str, target_provider: str) -> str:
+        job_id = str(len(self.jobs) + 1)
+        self.jobs[job_id] = MigrationJob(job_id, source_provider, target_provider, MigrationStatus.QUEUED)
+        # Simulate migration process
+        self.jobs[job_id].status = MigrationStatus.RUNNING
+        # Simulate success or failure
+        if source_provider == target_provider:
+            self.jobs[job_id].status = MigrationStatus.FAILURE
+        else:
+            self.jobs[job_id].status = MigrationStatus.SUCCESS
+        return job_id
 
-    def initiate_failover(self, provider_name: str):
-        provider = self.get_provider(provider_name)
-        if provider:
-            self.failover_log.append({
-                'timestamp': datetime.now().isoformat(),
-                'provider': provider_name
-            })
-            return True
-        return False
+    def get_job_status(self, job_id: str) -> MigrationStatus:
+        return self.jobs.get(job_id, MigrationJob(job_id, "", "", MigrationStatus.FAILURE)).status
 
-    def prioritize_failover(self):
-        # Simulate prioritization by marking the job as high-priority
-        return True
+    def get_logs(self, job_id: str) -> str:
+        # Simulate log generation
+        if self.jobs.get(job_id, MigrationJob(job_id, "", "", MigrationStatus.FAILURE)).status == MigrationStatus.SUCCESS:
+            return "Migration successful"
+        else:
+            return "Migration failed"
 
-    def log_failover(self, provider_name: str):
-        self.failover_log.append({
-            'timestamp': datetime.now().isoformat(),
-            'provider': provider_name
-        })
+def main():
+    parser = argparse.ArgumentParser(description="Cloud Mover")
+    parser.add_argument("--source", help="Source provider")
+    parser.add_argument("--target", help="Target provider")
+    args = parser.parse_args()
+    cloud_mover = CloudMover()
+    job_id = cloud_mover.migrate(args.source, args.target)
+    print(f"Job ID: {job_id}")
+    print(f"Job Status: {cloud_mover.get_job_status(job_id)}")
+    print(f"Logs: {cloud_mover.get_logs(job_id)}")
 
-    def get_failover_log(self):
-        return self.failover_log
+if __name__ == "__main__":
+    main()

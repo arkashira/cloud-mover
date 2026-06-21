@@ -1,34 +1,35 @@
-from cloud_mover import CloudMover, Provider
 import pytest
+from cloud_mover import CloudMover, MigrationStatus
 
-def test_add_provider():
+def test_get_providers():
     cloud_mover = CloudMover()
-    cloud_mover.add_provider('provider1', {'username': 'user1', 'password': 'pass1'})
-    assert cloud_mover.get_provider('provider1').credentials == {'username': 'user1', 'password': 'pass1'}
+    assert cloud_mover.get_providers() == ["aws", "gcp", "azure"]
 
-def test_initiate_failover():
+def test_migrate_success():
     cloud_mover = CloudMover()
-    cloud_mover.add_provider('provider1', {'username': 'user1', 'password': 'pass1'})
-    assert cloud_mover.initiate_failover('provider1')
-    assert len(cloud_mover.get_failover_log()) == 1
+    job_id = cloud_mover.migrate("aws", "gcp")
+    assert cloud_mover.get_job_status(job_id) == MigrationStatus.SUCCESS
 
-def test_prioritize_failover():
+def test_migrate_failure():
     cloud_mover = CloudMover()
-    assert cloud_mover.prioritize_failover()
+    job_id = cloud_mover.migrate("aws", "aws")
+    assert cloud_mover.get_job_status(job_id) == MigrationStatus.FAILURE
 
-def test_log_failover():
+def test_get_job_status():
     cloud_mover = CloudMover()
-    cloud_mover.log_failover('provider1')
-    assert len(cloud_mover.get_failover_log()) == 1
+    job_id = cloud_mover.migrate("aws", "gcp")
+    assert cloud_mover.get_job_status(job_id) == MigrationStatus.SUCCESS
 
-def test_get_failover_log():
+def test_get_logs_success():
     cloud_mover = CloudMover()
-    cloud_mover.log_failover('provider1')
-    log = cloud_mover.get_failover_log()
-    assert len(log) == 1
-    assert 'timestamp' in log[0]
-    assert 'provider' in log[0]
+    job_id = cloud_mover.migrate("aws", "gcp")
+    assert cloud_mover.get_logs(job_id) == "Migration successful"
 
-def test_initiate_failover_invalid_provider():
+def test_get_logs_failure():
     cloud_mover = CloudMover()
-    assert not cloud_mover.initiate_failover('invalid_provider')
+    job_id = cloud_mover.migrate("aws", "aws")
+    assert cloud_mover.get_logs(job_id) == "Migration failed"
+
+def test_get_job_status_non_existent_job():
+    cloud_mover = CloudMover()
+    assert cloud_mover.get_job_status("non_existent_job") == MigrationStatus.FAILURE
